@@ -523,6 +523,7 @@ int format_device(const char *device, const char *path, const char *fs_type) {
         return -1;
     }
 
+#if 0
     if (strcmp(fs_type, "yaffs2") == 0 || strcmp(fs_type, "mtd") == 0) {
         mtd_scan_partitions();
         const MtdPartition* partition = mtd_find_partition_by_name(device);
@@ -545,6 +546,7 @@ int format_device(const char *device, const char *path, const char *fs_type) {
         }
         return 0;
     }
+#endif
 
     if (strcmp(fs_type, "ext4") == 0) {
         int length = 0;
