@@ -30,8 +30,10 @@
 #include "roots.h"
 #include "recovery_ui.h"
 
+#if 0
 #include "../../external/yaffs2/yaffs2/utils/mkyaffs2image.h"
 #include "../../external/yaffs2/yaffs2/utils/unyaffs.h"
+#endif
 
 #include <sys/vfs.h>
 
@@ -110,11 +112,13 @@ static void compute_directory_stats(const char* directory)
 typedef void (*file_event_callback)(const char* filename);
 typedef int (*nandroid_backup_handler)(const char* backup_path, const char* backup_file_image, int callback);
 
+#if 0
 static int mkyaffs2image_wrapper(const char* backup_path, const char* backup_file_image, int callback) {
     char backup_file_image_with_extension[PATH_MAX];
     sprintf(backup_file_image_with_extension, "%s.img", backup_file_image);
     return mkyaffs2image(backup_path, backup_file_image_with_extension, 0, callback ? nandroid_callback : NULL);
 }
+#endif
 
 static int tar_compress_wrapper(const char* backup_path, const char* backup_file_image, int callback) {
     char tmp[PATH_MAX];
@@ -215,10 +219,12 @@ static nandroid_backup_handler get_backup_handler(const char *backup_path) {
         return default_backup_handler;
     }
 
+#if 0
     // cwr5, we prefer dedupe for everything except yaffs2
     if (strcmp("yaffs2", mv->filesystem) == 0) {
         return mkyaffs2image_wrapper;
     }
+#endif
 
     return default_backup_handler;
 }
@@ -394,9 +400,11 @@ int nandroid_backup(const char* backup_path)
 
 typedef int (*nandroid_restore_handler)(const char* backup_file_image, const char* backup_path, int callback);
 
+#if 0
 static int unyaffs_wrapper(const char* backup_file_image, const char* backup_path, int callback) {
     return unyaffs(backup_file_image, backup_path, callback ? nandroid_callback : NULL);
 }
+#endif
 
 static int tar_extract_wrapper(const char* backup_file_image, const char* backup_path, int callback) {
     char tmp[PATH_MAX];
@@ -459,6 +467,7 @@ static nandroid_restore_handler get_restore_handler(const char *backup_path) {
         return tar_extract_wrapper;
     }
 
+#if 0
     // cwr 5, we prefer tar for everything unless it is yaffs2
     char str[255];
     char* partition;
@@ -470,6 +479,7 @@ static nandroid_restore_handler get_restore_handler(const char *backup_path) {
     if (strcmp("yaffs2", mv->filesystem) == 0) {
         return unyaffs_wrapper;
     }
+#endif
 
     return tar_extract_wrapper;
 }
@@ -496,12 +506,14 @@ int nandroid_restore_partition_extended(const char* backup_path, const char* mou
         char *filesystem;
         int i = 0;
         while ((filesystem = filesystems[i]) != NULL) {
+#if 0
             sprintf(tmp, "%s/%s.%s.img", backup_path, name, filesystem);
             if (0 == (ret = statfs(tmp, &file_info))) {
                 backup_filesystem = filesystem;
                 restore_handler = unyaffs_wrapper;
                 break;
             }
+#endif
             sprintf(tmp, "%s/%s.%s.tar", backup_path, name, filesystem);
             if (0 == (ret = statfs(tmp, &file_info))) {
                 backup_filesystem = filesystem;
