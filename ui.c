@@ -408,13 +408,13 @@ static int input_callback(int fd, short revents, void *data)
             // (positive or negative), fake an up/down
             // key event.
             rel_sum += ev.value;
-            if (rel_sum > 3) {
+            if (rel_sum > 64) {
                 fake_key = 1;
                 ev.type = EV_KEY;
                 ev.code = KEY_DOWN;
                 ev.value = 1;
                 rel_sum = 0;
-            } else if (rel_sum < -3) {
+            } else if (rel_sum < -64) {
                 fake_key = 1;
                 ev.type = EV_KEY;
                 ev.code = KEY_UP;
