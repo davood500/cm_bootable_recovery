@@ -50,6 +50,8 @@ int ev_init(ev_callback input_cb, void *data)
 {
     DIR *dir;
     struct dirent *de;
+    struct input_absinfo ai;
+    struct touch_info *ti;
     int fd;
 
     dir = opendir("/dev/input");
@@ -73,6 +75,35 @@ int ev_init(ev_callback input_cb, void *data)
             if (!test_bit(EV_KEY, ev_bits) && !test_bit(EV_REL, ev_bits) && !test_bit(EV_ABS, ev_bits)) {
                 close(fd);
                 continue;
+            }
+
+            if (test_bit(EV_ABS, ev_bits) && data == NULL) {
+                if ((ti = malloc(sizeof(*ti))) == NULL) {
+                    close(fd);
+                    continue;
+                }
+                ti->width = ti->height = ti->abs_x0 = ti->abs_y0 =
+                ti->abs_x = ti->abs_y = ti->btn_t = -1;
+
+                /* skip EVIOCGBIT(EV_ABS) due to laziness ;) */
+
+                if (ioctl(fd, EVIOCGABS(ABS_MT_POSITION_X), &ai) != -1)
+                    ti->width = ai.maximum - ai.minimum;
+                else if (ioctl(fd, EVIOCGABS(ABS_X), &ai) != -1)
+                    ti->width = ai.maximum - ai.minimum;
+
+                if (ti->width <= 0)
+                    ti->width = 128 << 3;
+
+                if (ioctl(fd, EVIOCGABS(ABS_MT_POSITION_Y), &ai) != -1)
+                    ti->height = ai.maximum - ai.minimum;
+                else if (ioctl(fd, EVIOCGABS(ABS_Y), &ai) != -1)
+                    ti->height = ai.maximum - ai.minimum;
+
+                if (ti->height <= 0)
+                    ti->height = 128 << 3;
+
+                data = ti;
             }
 
             ev_fds[ev_count].fd = fd;
