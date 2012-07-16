@@ -387,6 +387,7 @@ static int rel_sum = 0;
 static int input_callback(int fd, short revents, void *data)
 {
     struct input_event ev;
+    struct touch_info *ti = data;
     int ret;
     int fake_key = 0;
 
@@ -399,7 +400,75 @@ static int input_callback(int fd, short revents, void *data)
       return 0;
 #endif
 
-    if (ev.type == EV_SYN) {
+    if (ev.type == EV_SYN && ev.code == SYN_REPORT) {
+        if (ti->abs_x != -1 && ti->abs_y != -1) {
+            if (ti->abs_x0 == -1 && ti->abs_y0 == -1) {
+                ti->abs_x0 = ti->abs_x;
+                ti->abs_y0 = ti->abs_y;
+                ti->abs_x = ti->abs_y = -1;
+                return 0;
+            } else if (ti->abs_y - ti->abs_y0 > (ti->height >> 3))
+                ev.code = KEY_DOWN;
+            else if (ti->abs_y - ti->abs_y0 < -(ti->height >> 3))
+                ev.code = KEY_UP;
+            else if (ti->abs_x - ti->abs_x0 > (ti->width >> 3))
+                ev.code = KEY_RIGHT;
+            else if (ti->abs_x - ti->abs_x0 < -(ti->width >> 3))
+                ev.code = KEY_LEFT;
+            else {
+                ti->abs_x = ti->abs_y = -1;
+                return 0;
+            }
+
+            ti->abs_x0 = ti->abs_x;
+            ti->abs_y0 = ti->abs_y;
+            ti->abs_x = ti->abs_y = -1;
+            ti->btn_t = 0;
+
+            fake_key = 1;
+            ev.type = EV_KEY;
+            ev.value = 1;
+        } else if (ti->btn_t != -1) {
+            ti->abs_x0 = ti->abs_y0 = ti->abs_x = ti->abs_y = -1;
+
+            if (ti->btn_t == 1) {
+                ti->btn_t = -1;
+
+                fake_key = 1;
+                ev.type = EV_KEY;
+                ev.code = BTN_TOUCH;
+                ev.value = 1;
+            } else {
+                ti->btn_t = -1;
+                return 0;
+            }
+        } else
+            return 0;
+    } else if (ev.type == EV_ABS) {
+        switch (ev.code) {
+        case ABS_X:
+        case ABS_MT_POSITION_X:
+            if (ti->abs_x == -1)
+                ti->abs_x = ev.value;
+            break;
+        case ABS_Y:
+        case ABS_MT_POSITION_Y:
+            if (ti->abs_y == -1)
+                ti->abs_y = ev.value;
+            break;
+        case ABS_PRESSURE:
+        case ABS_MT_TOUCH_MAJOR:
+        case ABS_MT_PRESSURE:
+            if (ti->btn_t == -1 && ev.value > 0)
+                ti->btn_t = 1;
+            break;
+        }
+        return 0;
+    } else if (ev.type == EV_KEY && ev.code == BTN_TOUCH) {
+        if (ti->btn_t == -1 && ev.value == 1)
+            ti->btn_t = 1;
+        return 0;
+    } else if (ev.type == EV_SYN) {
         return 0;
     } else if (ev.type == EV_REL) {
         if (ev.code == REL_Y) {

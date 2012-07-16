@@ -53,6 +53,17 @@ void ev_exit(void);
 int ev_add_fd(int fd, ev_callback cb, void *data);
 int ev_sync_key_state(ev_set_key_callback set_key_cb, void *data);
 
+/* for touch screen control */
+struct touch_info {
+    int width;
+    int height;
+    int abs_x0;
+    int abs_y0;
+    int abs_x;
+    int abs_y;
+    int btn_t;
+};
+
 /* timeout has the same semantics as for poll
  *    0 : don't block
  *  < 0 : block forever
